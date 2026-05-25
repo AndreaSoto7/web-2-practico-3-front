@@ -23,6 +23,7 @@ const CreatorProfile = () => {
     const [publicaciones, setPublicaciones] = useState([]);
     const [bloqueado, setBloqueado] = useState(false);
     const [mensaje, setMensaje] = useState("");
+    const [comentarios, setComentarios] = useState({});
     const form = useForm({ resolver: yupResolver(donacionSchema), defaultValues: { cantidadFlanes: 1 }, mode: "onChange" });
 
     const loadProfile = () => {
@@ -66,11 +67,19 @@ const CreatorProfile = () => {
             .catch((error) => alert(getErrorMessage(error)));
     };
 
-    const comment = (publicacionId) => {
-        const texto = window.prompt("Comentario para el creador");
+    const changeComentario = (publicacionId, value) => {
+        setComentarios((prev) => ({ ...prev, [publicacionId]: value }));
+    };
+
+    const comment = (event, publicacionId) => {
+        event.preventDefault();
+        const texto = comentarios[publicacionId]?.trim();
         if (!texto) return;
         publicacionService.comment(publicacionId, { texto })
-            .then(loadProfile)
+            .then(() => {
+                setComentarios((prev) => ({ ...prev, [publicacionId]: "" }));
+                loadProfile();
+            })
             .catch((error) => alert(getErrorMessage(error)));
     };
 
@@ -122,7 +131,17 @@ const CreatorProfile = () => {
                                         <article key={publicacion.id} className="rounded-md border border-gray-200 p-4">
                                             {publicacion.imagenUrl && <img src={publicacion.imagenUrl} alt="" className="mb-3 max-h-80 w-full rounded-md object-cover" />}
                                             <p>{publicacion.texto}</p>
-                                            <Button variant="primary" onClick={() => comment(publicacion.id)}>Comentar</Button>
+                                            <form onSubmit={(event) => comment(event, publicacion.id)} className="mt-3 flex flex-col gap-2 sm:flex-row">
+                                                <Input
+                                                    aria-label="Comentario para el creador"
+                                                    placeholder="Comentario para el creador"
+                                                    value={comentarios[publicacion.id] || ""}
+                                                    onChange={(event) => changeComentario(publicacion.id, event.target.value)}
+                                                />
+                                                <Button variant="primary" type="submit" className="my-0 sm:w-auto">
+                                                    Comentar
+                                                </Button>
+                                            </form>
                                         </article>
                                     ))}
                                 </div>
